@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { requireApiUser } from '@/lib/current-user';
+import { notify } from '@/lib/domain';
 
 export async function GET() {
   const user = await requireApiUser();
@@ -21,9 +22,12 @@ export async function POST(request: Request) {
   if (profile.verificationStatus !== 'verified') return Response.json({ error: 'Identity verification is required before requesting direct help.' }, { status: 403 });
   const active = await env.DB.prepare(`SELECT COUNT(*) AS count FROM help_requests WHERE mentee_id = ? AND status IN ('pending', 'accepted', 'active')`).bind(user.userId).first<{ count: number }>();
   if ((active?.count ?? 0) >= profile.activeRequestLimit) return Response.json({ error: `You can have ${profile.activeRequestLimit} active request at this stage.` }, { status: 409 });
-  const mentor = await env.DB.prepare(`SELECT id FROM mentors WHERE id = ? AND verified = 1 AND accepting_requests = 1`).bind(mentorId).first();
+  const mentor = await env.DB.prepare(`SELECT id, user_id AS userId FROM mentors WHERE id = ? AND verified = 1 AND accepting_requests = 1`).bind(mentorId).first<{id:string;userId:string|null}>();
   if (!mentor) return Response.json({ error: 'This verified mentor is not currently accepting requests.' }, { status: 404 });
+  if (mentor.userId === user.userId) return Response.json({ error: 'You cannot send a mentorship request to yourself.' }, { status: 409 });
   const id = crypto.randomUUID(); const now = new Date().toISOString();
   await env.DB.prepare(`INSERT INTO help_requests (id, mentee_id, mentor_id, topic, context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(id, user.userId, mentorId, topic, context, now, now).run();
+  const mentorAccount = await env.DB.prepare(`SELECT user_id AS userId FROM mentors WHERE id=?`).bind(mentorId).first<{userId:string|null}>();
+  await notify(mentorAccount?.userId ?? null, 'new_request', 'New mentorship request', `${user.displayName} sent a focused request.`);
   return Response.json({ id, ok: true }, { status: 201 });
 }
