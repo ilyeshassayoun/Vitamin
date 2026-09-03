@@ -48,12 +48,15 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-body { font-family: var(--font-body), Arial, Helvetica, sans-serif; }
+body {
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
+  background-image: radial-gradient(circle at 8% 0%, rgba(243,179,108,.16), transparent 28rem), radial-gradient(circle at 92% 8%, rgba(23,63,48,.08), transparent 24rem);
+}
 
 :root {
-  --background: oklch(0.982 0.008 92);
+  --background: oklch(0.965 0.018 92);
   --foreground: oklch(0.24 0.035 153);
-  --card: oklch(0.995 0.004 92);
+  --card: oklch(0.995 0.006 92);
   --card-foreground: oklch(0.24 0.035 153);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
@@ -66,8 +69,8 @@ body { font-family: var(--font-body), Arial, Helvetica, sans-serif; }
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.87 0.018 92);
-  --input: oklch(0.87 0.018 92);
+  --border: oklch(0.84 0.026 92);
+  --input: oklch(0.84 0.026 92);
   --ring: oklch(0.55 0.09 155);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -121,9 +124,17 @@ body { font-family: var(--font-body), Arial, Helvetica, sans-serif; }
 
 @layer components {
   .section-kicker { @apply text-xs font-bold uppercase tracking-[.15em] text-primary; }
-  .section-title { @apply mt-2 font-heading text-3xl font-semibold tracking-[-.045em] sm:text-4xl; }
-  .mentor-card { @apply rounded-[24px] border bg-card p-6 shadow-[0_10px_35px_rgba(27,57,43,.05)] transition-all hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(27,57,43,.09)]; }
+  .section-title { @apply mt-2 max-w-2xl font-heading text-3xl font-semibold tracking-[-.055em] sm:text-4xl; }
+  .mentor-card { @apply rounded-[26px] border bg-card p-6 shadow-[0_12px_38px_rgba(27,57,43,.06)] transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_20px_50px_rgba(27,57,43,.12)]; }
 }
+
+@layer utilities {
+  .dashboard-surface { box-shadow: 0 24px 80px rgba(27,57,43,.06); }
+}
+
+main > header { border-color: rgba(23,63,48,.12); }
+main > header strong { letter-spacing: -.06em; }
+button, a { -webkit-tap-highlight-color: transparent; }
 
 ::selection { background: #f3b36c; color: #173f30; }
 
