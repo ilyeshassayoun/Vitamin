@@ -26,8 +26,8 @@ export function VitaminPreview({ signedInName }: { signedInName: string | null }
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-17 max-w-[1440px] items-center justify-between px-5 lg:px-8">
+      <header className="sticky top-0 z-30 px-3 pt-3 sm:px-5">
+        <div className="mx-auto flex h-16 max-w-[1380px] items-center justify-between rounded-full border border-white/80 bg-card/90 px-5 shadow-[0_16px_45px_rgba(27,57,43,.10)] backdrop-blur-xl lg:px-7">
           <a href="#top" className="flex items-center gap-2.5" aria-label="Vitamin home">
             <span className="grid size-9 place-items-center rounded-[13px] bg-primary text-primary-foreground shadow-[0_8px_24px_rgba(30,98,66,.2)]"><Sparkles className="size-4" /></span>
             <span className="font-heading text-xl font-semibold tracking-[-.03em]">vitamin</span>
@@ -44,8 +44,8 @@ export function VitaminPreview({ signedInName }: { signedInName: string | null }
         {menuOpen && <nav className="border-t bg-background px-5 py-4 md:hidden"><a className="block py-3 font-semibold" href="#discover">Discover</a><a className="block py-3" href="#community">Community</a><a className="block py-3" href="#how">How it works</a></nav>}
       </header>
 
-      <section id="top" className="mx-auto grid max-w-[1440px] gap-7 px-5 pb-8 pt-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,.72fr)] lg:px-8 lg:pt-12">
-        <div className="relative overflow-hidden rounded-[32px] bg-[#173f30] px-6 py-9 text-white sm:px-10 sm:py-12 lg:min-h-[390px] lg:px-14 lg:py-14">
+      <section id="top" className="mx-auto grid max-w-[1440px] gap-6 px-5 pb-10 pt-10 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,.72fr)] lg:px-8 lg:pt-14">
+        <div className="relative overflow-hidden rounded-[40px] bg-[#173f30] px-6 py-10 text-white shadow-[0_28px_80px_rgba(23,63,48,.2)] sm:px-10 sm:py-14 lg:min-h-[500px] lg:px-14 lg:py-16">
           <div className="absolute -right-20 -top-24 size-80 rounded-full border-[54px] border-[#2e624d] opacity-80" /><div className="absolute -bottom-24 right-32 size-56 rounded-full bg-[#f3b36c] opacity-90 blur-[1px]" />
           <div className="relative max-w-2xl">
             <Badge className="mb-7 border-white/15 bg-white/10 text-white">Munich · AFT pilot</Badge>
@@ -57,7 +57,7 @@ export function VitaminPreview({ signedInName }: { signedInName: string | null }
             </div>
           </div>
         </div>
-        <Card className="rounded-[32px] border-0 bg-[#f0eee6] py-0 ring-0"><CardContent className="flex h-full flex-col p-7 sm:p-9">
+        <Card className="rounded-[40px] border border-white/70 bg-[#efeadd]/90 py-0 shadow-[0_22px_60px_rgba(27,57,43,.08)] ring-0"><CardContent className="flex h-full flex-col p-7 sm:p-9">
           <div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.16em] text-muted-foreground">Your journey</p><h2 className="mt-2 font-heading text-2xl font-semibold tracking-[-.04em]">One contribution away</h2></div><span className="grid size-11 place-items-center rounded-full bg-white"><HeartHandshake className="text-primary" /></span></div>
           <div className="mt-8"><div className="mb-3 flex justify-between text-sm"><span>Profile progress</span><strong>75%</strong></div><Progress value={75} className="[&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-track]]:bg-white [&_[data-slot=progress-indicator]]:bg-[#e87943]" /></div>
           <ol className="mt-8 space-y-5"><JourneyStep done label="Create your profile" /><JourneyStep done label="Verify your identity" /><JourneyStep label="Share something useful" active /><JourneyStep label="Request your first conversation" /></ol>
@@ -75,7 +75,7 @@ export function VitaminPreview({ signedInName }: { signedInName: string | null }
         </article>)}</div>
       </section>
 
-      <section id="how" className="border-y bg-[#f5f2e9]"><div className="mx-auto max-w-[1440px] px-5 py-16 lg:px-8"><p className="section-kicker">Not points. Not prestige.</p><h2 className="section-title max-w-2xl">Your track record grows from showing up.</h2><div className="mt-10 grid gap-px overflow-hidden rounded-[28px] border bg-border md:grid-cols-3"><Principle icon={<Compass />} number="01" title="Contribute" text="Share something useful before asking for direct help." /><Principle icon={<Users />} number="02" title="Connect" text="Request one focused conversation with a verified mentor." /><Principle icon={<HeartHandshake />} number="03" title="Pass it on" text="Help someone one step behind when your moment comes." /></div></div></section>
+      <section id="how" className="mx-3 overflow-hidden rounded-[40px] bg-[#173f30] text-white sm:mx-5"><div className="mx-auto max-w-[1400px] px-5 py-16 lg:px-10"><p className="text-xs font-bold uppercase tracking-[.17em] text-[#f3b36c]">Not points. Not prestige.</p><h2 className="mt-3 max-w-2xl font-heading text-3xl font-semibold tracking-[-.05em] sm:text-4xl">Your track record grows from showing up.</h2><div className="mt-10 grid gap-3 md:grid-cols-3"><Principle icon={<Compass />} number="01" title="Contribute" text="Share something useful before asking for direct help." /><Principle icon={<Users />} number="02" title="Connect" text="Request one focused conversation with a verified mentor." /><Principle icon={<HeartHandshake />} number="03" title="Pass it on" text="Help someone one step behind when your moment comes." /></div></div></section>
 
       <section id="community" className="mx-auto grid max-w-[1440px] gap-8 px-5 py-16 lg:grid-cols-[.8fr_1.2fr] lg:px-8"><div><p className="section-kicker">Community knowledge</p><h2 className="section-title">One thing that helped me.</h2><p className="mt-4 max-w-md leading-7 text-muted-foreground">Every member begins by leaving one useful idea behind. No gate on learning, no debt to repay.</p><Button variant="outline" className="mt-7 h-11 rounded-full px-5"><BookOpen /> Browse all guides</Button></div><div className="grid gap-4 sm:grid-cols-2"><CommunityCard tag="Interview" title="Three questions I wish I had prepared before my first audit interview" author="Ana · Rising Mentor" /><CommunityCard tag="CV" title="The one-page CV structure that finally got me responses in Germany" author="Mateo · Student" /></div></section>
       <footer className="border-t px-5 py-8 text-sm text-muted-foreground lg:px-8"><div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-4 sm:flex-row"><span>© 2026 Vitamin · Built for fairer access.</span><span>Munich pilot · Español / Deutsch</span></div></footer>
@@ -86,5 +86,5 @@ export function VitaminPreview({ signedInName }: { signedInName: string | null }
 }
 
 function JourneyStep({ label, done = false, active = false }: { label: string; done?: boolean; active?: boolean }) { return <li className={`flex items-center gap-3 text-sm ${active ? 'font-semibold' : 'text-muted-foreground'}`}><span className={`grid size-6 place-items-center rounded-full text-xs ${done ? 'bg-primary text-white' : active ? 'border-2 border-[#e87943] bg-white' : 'border bg-white'}`}>{done ? <Check className="size-3.5" /> : ''}</span>{label}</li> }
-function Principle({ icon, number, title, text }: { icon: React.ReactNode; number: string; title: string; text: string }) { return <article className="bg-background p-7 sm:p-9"><div className="flex items-center justify-between text-primary">{icon}<span className="font-mono text-xs text-muted-foreground">{number}</span></div><h3 className="mt-10 font-heading text-xl font-semibold">{title}</h3><p className="mt-2 leading-6 text-muted-foreground">{text}</p></article> }
+function Principle({ icon, number, title, text }: { icon: React.ReactNode; number: string; title: string; text: string }) { return <article className="rounded-[26px] border border-white/10 bg-white/7 p-7 sm:p-9"><div className="flex items-center justify-between text-[#f3b36c]">{icon}<span className="font-mono text-xs text-white/35">{number}</span></div><h3 className="mt-10 font-heading text-xl font-semibold">{title}</h3><p className="mt-2 leading-6 text-white/58">{text}</p></article> }
 function CommunityCard({ tag, title, author }: { tag: string; title: string; author: string }) { return <article className="group rounded-[24px] border bg-card p-6 transition-transform hover:-translate-y-1"><Badge variant="secondary">{tag}</Badge><h3 className="mt-8 text-lg font-semibold leading-6 tracking-[-.02em]">{title}</h3><div className="mt-8 flex items-center justify-between text-xs text-muted-foreground"><span>{author}</span><ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></div></article> }
