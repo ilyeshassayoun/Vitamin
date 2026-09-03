@@ -11,6 +11,40 @@ const imgInes = "/figma/55f3ace3474ff0dce2d64b755c276e71d703ea44.png";
 const MONO = "var(--font-figma-mono), monospace";
 const SANS = "var(--font-figma-sans), sans-serif";
 
+type LandingMentor = {
+  id: string;
+  name: string;
+  initials: string;
+  role: string;
+  company: string;
+  languages: string;
+  helpsWith: string;
+  bio: string;
+  city: string;
+  specialty: string;
+  imageUrl: string | null;
+  responseMinutes: number;
+  color: string;
+};
+
+type LandingMetrics = {
+  activeMentors: number;
+  completedConversations: number;
+  positiveEffortRate: number | null;
+  averageSessionMinutes: number;
+  pilotLocation: string;
+  pilotVertical: string;
+};
+
+const DEFAULT_METRICS: LandingMetrics = {
+  activeMentors: 3,
+  completedConversations: 0,
+  positiveEffortRate: null,
+  averageSessionMinutes: 15,
+  pilotLocation: "Munich",
+  pilotVertical: "AFT",
+};
+
 // ─── Scroll reveal ────────────────────────────────────────────────────────────
 function useReveal() {
   useEffect(() => {
@@ -149,9 +183,11 @@ function Sidebar({ open, close, signedInName }: { open: boolean; close: () => vo
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-function Modal({ m, close }: { m: { name: string; color: string }; close: () => void }) {
+function Modal({ m, close, signedInName }: { m: LandingMentor; close: () => void; signedInName: string | null }) {
   const [msg, setMsg] = useState("");
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const h = (e:MouseEvent) => { if(ref.current && !ref.current.contains(e.target as Node)) close(); };
@@ -160,6 +196,34 @@ function Modal({ m, close }: { m: { name: string; color: string }; close: () => 
     document.body.style.overflow="hidden";
     return () => { document.removeEventListener("mousedown",h); document.removeEventListener("keydown",k); document.body.style.overflow=""; };
   }, [close]);
+
+  async function sendRequest() {
+    if (msg.trim().length < 20 || busy) return;
+    if (!signedInName) {
+      window.location.assign("/signin-with-chatgpt?return_to=%2Fapp");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mentorId: m.id, topic: m.helpsWith, context: msg }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) {
+        setError(result.error ?? "Your request could not be sent.");
+        return;
+      }
+      setSent(true);
+      setTimeout(close, 1800);
+    } catch {
+      setError("The service is temporarily unavailable. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4"
@@ -185,7 +249,7 @@ function Modal({ m, close }: { m: { name: string; color: string }; close: () => 
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 13L9 17L19 7" stroke={m.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
               <p style={{ fontFamily:SANS, fontWeight:900, color:"#1d2226", fontSize:"16px" }}>Request sent.</p>
-              <p style={{ fontFamily:MONO, fontSize:"11px", color:"#9ca3af", marginTop:"6px" }}>They'll respond within 48 hours.</p>
+              <p style={{ fontFamily:MONO, fontSize:"11px", color:"#9ca3af", marginTop:"6px" }}>Track the response in your Vitamin workspace.</p>
             </div>
           ):(
             <>
@@ -196,10 +260,18 @@ function Modal({ m, close }: { m: { name: string; color: string }; close: () => 
                   border:"1px solid rgba(29,34,38,0.1)", borderRadius:"6px", padding:"12px", width:"100%",
                   height:"108px", resize:"none", outline:"none" }}
                 className="focus:border-[rgba(29,34,38,0.35)] transition-colors"/>
-              <p style={{ fontFamily:MONO, fontSize:"10px", color:"#9ca3af", marginTop:"8px", marginBottom:"20px" }}>15 min · human-to-human · no pitch</p>
-              <button onClick={()=>{if(msg.trim()){setSent(true);setTimeout(close,1800);}}}
+              <div className="flex items-center justify-between" style={{ marginTop:"8px", marginBottom:error?"10px":"20px" }}>
+                <p style={{ fontFamily:MONO, fontSize:"10px", color:"#9ca3af" }}>{m.responseMinutes} min · human-to-human · no pitch</p>
+                <span style={{ fontFamily:MONO, fontSize:"9px", color:msg.trim().length>=20?"#5b8a4a":"#9ca3af" }}>{msg.trim().length}/20 MIN</span>
+              </div>
+              {error && <div role="alert" style={{ fontFamily:SANS, fontSize:"12px", color:"#8b4025", background:"#fff2ec", borderRadius:"5px", padding:"10px 12px", marginBottom:"14px", lineHeight:1.5 }}>
+                {error} <a href="/app" style={{ fontWeight:700, textDecoration:"underline" }}>Open your workspace</a>
+              </div>}
+              <button onClick={sendRequest} disabled={busy || msg.trim().length < 20}
                 style={{ fontFamily:SANS, fontWeight:700, fontSize:"13px", color:"#fff", width:"100%", padding:"14px",
-                  background:msg.trim()?m.color:"#d1d5db", borderRadius:"6px", transition:"all .2s" }}>Send Request</button>
+                  background:msg.trim().length>=20?m.color:"#d1d5db", borderRadius:"6px", transition:"all .2s" }}>
+                {busy ? "Sending…" : signedInName ? "Send Request" : "Sign in to continue"}
+              </button>
             </>
           )}
         </div>
@@ -209,7 +281,7 @@ function Modal({ m, close }: { m: { name: string; color: string }; close: () => 
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-function Hero() {
+function Hero({ mentors }: { mentors: LandingMentor[] }) {
   return (
     <section className="relative bg-[#f5f4f0] pt-16 min-h-screen flex flex-col justify-between overflow-hidden">
       <div className="max-w-[1320px] mx-auto px-6 lg:px-14 w-full flex-1 flex flex-col justify-center py-16 lg:py-24">
@@ -295,19 +367,15 @@ function Hero() {
             </div>
             {/* queue */}
             <div className="px-4 pb-4 flex flex-col">
-              {[
-                { num:"01", c:"#0a66c2", name:"Maya Chen",  sub:"Built a climate startup", loc:"BERLIN · 12 MIN" },
-                { num:"02", c:"#c77a1f", name:"Omar Reed",  sub:"Changed careers at 41",  loc:"LONDON · 18 MIN" },
-                { num:"03", c:"#5b8a4a", name:"Leila Sato", sub:"Scaled product to 10M",  loc:"TOKYO · 09 MIN"  },
-              ].map((item,i) => (
-                <div key={i} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f4f0] transition-colors"
+              {mentors.slice(0, 3).map((item,i) => (
+                <div key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#f5f4f0] transition-colors"
                   style={{ borderTop: i>0?"1px solid rgba(29,34,38,0.05)":"none", borderRadius:"4px" }}>
-                  <span style={{ fontFamily:MONO, fontSize:"16px", fontWeight:500, color:item.c, width:"28px", flexShrink:0 }}>{item.num}</span>
+                  <span style={{ fontFamily:MONO, fontSize:"16px", fontWeight:500, color:item.color, width:"28px", flexShrink:0 }}>{String(i + 1).padStart(2, "0")}</span>
                   <div className="flex-1 min-w-0">
                     <p style={{ fontFamily:SANS, fontSize:"13px", fontWeight:700, color:"#1d2226" }}>{item.name}</p>
-                    <p style={{ fontFamily:SANS, fontSize:"11px", color:"#6b7280" }}>{item.sub}</p>
+                    <p style={{ fontFamily:SANS, fontSize:"11px", color:"#6b7280" }}>{item.helpsWith}</p>
                   </div>
-                  <span style={{ fontFamily:MONO, fontSize:"9px", color:"#9ca3af", letterSpacing:"0.5px", flexShrink:0 }}>{item.loc}</span>
+                  <span style={{ fontFamily:MONO, fontSize:"9px", color:"#9ca3af", letterSpacing:"0.5px", flexShrink:0 }}>{item.city.toUpperCase()} · {item.responseMinutes} MIN</span>
                 </div>
               ))}
             </div>
@@ -331,12 +399,12 @@ function Hero() {
 }
 
 // ─── Stats — editorial alternating layout ─────────────────────────────────────
-function Stats() {
+function Stats({ metrics }: { metrics: LandingMetrics }) {
   const items = [
-    { val:"24,000+", label:"Conversations facilitated",  sub:"and growing every week" },
-    { val:"92%",     label:"Left with clarity",          sub:"post-interaction survey" },
-    { val:"43",      label:"Cities worldwide",           sub:"Munich to Manila"        },
-    { val:"15 MIN",  label:"Average session length",     sub:"no wasted time"         },
+    { val:String(metrics.completedConversations), label:"Completed conversations", sub:"verified pilot interactions" },
+    { val:metrics.positiveEffortRate === null ? "NEW" : `${metrics.positiveEffortRate}%`, label:"Strong effort signals", sub:"double-blind released reviews" },
+    { val:String(metrics.activeMentors), label:"Mentors accepting requests", sub:`${metrics.pilotLocation} pilot` },
+    { val:`${metrics.averageSessionMinutes} MIN`, label:"Typical session length", sub:`${metrics.pilotVertical} focused` },
   ];
   return (
     <section className="bg-[#1d2226] py-0" data-dark>
@@ -358,24 +426,25 @@ function Stats() {
 }
 
 // ─── Mentor row — hover reveals floating photo ────────────────────────────────
-const MENTORS = [
-  { id:"nia",  num:"01", name:"Nia Okafor",  role:"The Operator", bio:"Turned a side project into a 30-person company without losing the plot.", city:"Lagos",     topic:"Building",     img:imgNia,  color:"#0a66c2" },
-  { id:"jon",  num:"02", name:"Jon Bell",    role:"The Changer",  bio:"Left law at 38 and rebuilt a working life around craft and autonomy.",   city:"Melbourne", topic:"Career Pivot", img:imgJon,  color:"#c77a1f" },
-  { id:"ines", num:"03", name:"Ines Martín", role:"The Scaler",   bio:"Knows what breaks between your first hundred and first million users.",  city:"Madrid",    topic:"Product",      img:imgInes, color:"#5b8a4a" },
+const FALLBACK_MENTORS: LandingMentor[] = [
+  { id:"lucia-ramos", name:"Lucía Ramos", initials:"LR", role:"Senior Associate · Audit", company:"Big 4 · München", languages:"ES · DE · EN", helpsWith:"Interview preparation", bio:"Makes Big 4 recruiting concrete: preparation, positioning, and what interviewers actually listen for.", city:"Munich", specialty:"Audit & Interviews", imageUrl:imgNia, responseMinutes:12, color:"#0a66c2" },
+  { id:"daniel-weber", name:"Daniel Weber", initials:"DW", role:"Consultant · Deals", company:"Advisory · München", languages:"DE · EN", helpsWith:"CV feedback", bio:"Helps candidates turn varied experience into a focused story for consulting and transaction roles.", city:"Munich", specialty:"CV & Positioning", imageUrl:imgJon, responseMinutes:18, color:"#c77a1f" },
+  { id:"maria-santos", name:"María Santos", initials:"MS", role:"Manager · Tax", company:"Big 4 · München", languages:"ES · DE", helpsWith:"Career orientation", bio:"Offers a candid view of AFT career paths and the decisions that matter early in the journey.", city:"Munich", specialty:"Career Direction", imageUrl:imgInes, responseMinutes:15, color:"#5b8a4a" },
 ];
 
-function MentorList({ onMsg }: { onMsg: (m: { name:string; color:string }) => void }) {
+function MentorList({ mentors, onMsg }: { mentors: LandingMentor[]; onMsg: (m: LandingMentor) => void }) {
   const [active, setActive] = useState<string|null>(null);
   const [photoPos, setPhotoPos] = useState({ x: 0, y: 0 });
   const [filter, setFilter] = useState("All");
-  const filters = ["All","Career Pivot","Building","Product"];
+  const filters = ["All", ...Array.from(new Set(mentors.map((mentor) => mentor.specialty)))];
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setPhotoPos({ x: e.clientX + 28, y: e.clientY - 110 });
   }, []);
 
-  const activeImg = MENTORS.find(m => m.id === active)?.img;
-  const activeColor = MENTORS.find(m => m.id === active)?.color ?? "#0a66c2";
+  const activeImg = mentors.find(m => m.id === active)?.imageUrl;
+  const activeColor = mentors.find(m => m.id === active)?.color ?? "#0a66c2";
+  const visibleMentors = filter === "All" ? mentors : mentors.filter((mentor) => mentor.specialty === filter);
 
   return (
     <section id="mentors" className="py-24 lg:py-32">
@@ -410,13 +479,13 @@ function MentorList({ onMsg }: { onMsg: (m: { name:string; color:string }) => vo
 
         {/* List */}
         <div onMouseMove={handleMouseMove} className="select-none">
-          {MENTORS.map((m, i) => (
+          {visibleMentors.map((m, i) => (
             <div key={m.id} data-v data-delay={i*60}
               className="mentor-row flex items-center gap-6 lg:gap-12 px-0 py-7 lg:py-9 cursor-none"
               onMouseEnter={() => setActive(m.id)}
               onMouseLeave={() => setActive(null)}
-              onClick={() => onMsg({ name:m.name, color:m.color })}>
-              <span className="row-num shrink-0 w-12" style={{ fontFamily:MONO, fontSize:"13px", letterSpacing:"1px" }}>{m.num}</span>
+              onClick={() => onMsg(m)}>
+              <span className="row-num shrink-0 w-12" style={{ fontFamily:MONO, fontSize:"13px", letterSpacing:"1px" }}>{String(i + 1).padStart(2, "0")}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-5">
                   <span style={{ fontFamily:SANS, fontWeight:900, fontSize:"clamp(22px,3vw,36px)",
@@ -434,7 +503,7 @@ function MentorList({ onMsg }: { onMsg: (m: { name:string; color:string }) => vo
               <div className="hidden lg:flex items-center gap-6 shrink-0">
                 <div className="text-right">
                   <p style={{ fontFamily:MONO, fontSize:"9px", color:"rgba(29,34,38,0.3)", letterSpacing:"1px" }}>{m.city.toUpperCase()}</p>
-                  <p style={{ fontFamily:MONO, fontSize:"10px", color:m.color, letterSpacing:"0.5px", marginTop:"2px" }}>{m.topic.toUpperCase()}</p>
+                  <p style={{ fontFamily:MONO, fontSize:"10px", color:m.color, letterSpacing:"0.5px", marginTop:"2px" }}>{m.specialty.toUpperCase()}</p>
                 </div>
                 <span className="row-arrow" style={{ fontFamily:MONO, fontSize:"18px", color:m.color }}>→</span>
               </div>
@@ -723,7 +792,9 @@ function Footer() {
 export function FigmaLanding({ signedInName }: { signedInName: string | null }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [scrolled,    setScrolled]    = useState(false);
-  const [modal, setModal] = useState<null|{name:string;color:string}>(null);
+  const [modal, setModal] = useState<LandingMentor|null>(null);
+  const [mentors, setMentors] = useState<LandingMentor[]>(FALLBACK_MENTORS);
+  const [metrics, setMetrics] = useState<LandingMetrics>(DEFAULT_METRICS);
 
   useReveal();
 
@@ -733,16 +804,34 @@ export function FigmaLanding({ signedInName }: { signedInName: string | null }) 
     return ()=>window.removeEventListener("scroll",h);
   },[]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/mentors?featured=1", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Discovery unavailable");
+        return response.json() as Promise<{ mentors: Omit<LandingMentor, "color">[]; meta: LandingMetrics }>;
+      })
+      .then((data) => {
+        const colors = ["#0a66c2", "#c77a1f", "#5b8a4a"];
+        if (data.mentors.length) setMentors(data.mentors.map((mentor, index) => ({ ...mentor, color: colors[index % colors.length] })));
+        setMetrics(data.meta);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === "AbortError") return;
+      });
+    return () => controller.abort();
+  }, []);
+
   return (
     <div className="figma-landing bg-[#f5f4f0] overflow-x-hidden min-h-screen">
       <Cursor/>
       <Nav openSidebar={()=>setSidebarOpen(true)} scrolled={scrolled} signedInName={signedInName}/>
       <Sidebar open={sidebarOpen} close={()=>setSidebarOpen(false)} signedInName={signedInName}/>
-      {modal && <Modal m={modal} close={()=>setModal(null)}/>}
+      {modal && <Modal m={modal} close={()=>setModal(null)} signedInName={signedInName}/>}
 
-      <Hero/>
-      <Stats/>
-      <MentorList onMsg={setModal}/>
+      <Hero mentors={mentors}/>
+      <Stats metrics={metrics}/>
+      <MentorList mentors={mentors} onMsg={setModal}/>
       <HowItWorks/>
       <Testimonials/>
       <Interlude/>
@@ -751,4 +840,3 @@ export function FigmaLanding({ signedInName }: { signedInName: string | null }) 
     </div>
   );
 }
-

@@ -13,7 +13,7 @@ export const contributions = sqliteTable('contributions', {
 });
 
 export const mentors = sqliteTable('mentors', {
-  id: text('id').primaryKey(), userId: text('user_id').references(() => users.id, { onDelete: 'set null' }), name: text('name').notNull(), initials: text('initials').notNull(), role: text('role').notNull(), company: text('company').notNull(), languages: text('languages').notNull(), helpsWith: text('helps_with').notNull(), verified: integer('verified', { mode: 'boolean' }).notNull().default(true), accessTier: integer('access_tier').notNull().default(1), acceptingRequests: integer('accepting_requests', { mode: 'boolean' }).notNull().default(true),
+  id: text('id').primaryKey(), userId: text('user_id').references(() => users.id, { onDelete: 'set null' }), name: text('name').notNull(), initials: text('initials').notNull(), role: text('role').notNull(), company: text('company').notNull(), languages: text('languages').notNull(), helpsWith: text('helps_with').notNull(), bio: text('bio'), city: text('city').notNull().default('Munich'), specialty: text('specialty').notNull().default('AFT'), imageUrl: text('image_url'), responseMinutes: integer('response_minutes').notNull().default(15), featuredRank: integer('featured_rank'), verified: integer('verified', { mode: 'boolean' }).notNull().default(true), accessTier: integer('access_tier').notNull().default(1), acceptingRequests: integer('accepting_requests', { mode: 'boolean' }).notNull().default(true),
 });
 
 export const helpRequests = sqliteTable('help_requests', {

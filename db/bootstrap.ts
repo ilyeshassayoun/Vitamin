@@ -29,10 +29,15 @@ const requestColumns = [
   ['mentee_completed', 'INTEGER NOT NULL DEFAULT 0'], ['mentor_completed', 'INTEGER NOT NULL DEFAULT 0'],
 ];
 
+const mentorColumns = [
+  ['bio', 'TEXT'], ['city', `TEXT NOT NULL DEFAULT 'Munich'`], ['specialty', `TEXT NOT NULL DEFAULT 'AFT'`],
+  ['image_url', 'TEXT'], ['response_minutes', 'INTEGER NOT NULL DEFAULT 15'], ['featured_rank', 'INTEGER'],
+];
+
 const seedMentors = [
-  ['lucia-ramos', 'Lucía Ramos', 'LR', 'Senior Associate · Audit', 'Big 4 · München', 'ES · DE · EN', 'Interview preparation'],
-  ['daniel-weber', 'Daniel Weber', 'DW', 'Consultant · Deals', 'Advisory · München', 'DE · EN', 'CV feedback'],
-  ['maria-santos', 'María Santos', 'MS', 'Manager · Tax', 'Big 4 · München', 'ES · DE', 'Career orientation'],
+  ['lucia-ramos', 'Lucía Ramos', 'LR', 'Senior Associate · Audit', 'Big 4 · München', 'ES · DE · EN', 'Interview preparation', 'Makes Big 4 recruiting concrete: preparation, positioning, and what interviewers actually listen for.', 'Audit & Interviews', '/figma/11a355349a11fa6bc6642f5c92ef7aee487c924a.png', 12, 1],
+  ['daniel-weber', 'Daniel Weber', 'DW', 'Consultant · Deals', 'Advisory · München', 'DE · EN', 'CV feedback', 'Helps candidates turn varied experience into a focused story for consulting and transaction roles.', 'CV & Positioning', '/figma/fd8fb548c928adfe9f5f84eb3c36f4563a6acd8a.png', 18, 2],
+  ['maria-santos', 'María Santos', 'MS', 'Manager · Tax', 'Big 4 · München', 'ES · DE', 'Career orientation', 'Offers a candid view of AFT career paths and the decisions that matter early in the journey.', 'Career Direction', '/figma/55f3ace3474ff0dce2d64b755c276e71d703ea44.png', 15, 3],
 ];
 
 let initialized = false;
@@ -43,11 +48,17 @@ export async function ensureDatabase() {
   await db.batch(statements.slice(0, 9).map((statement) => db.prepare(statement)));
   const mentorInfo = await db.prepare(`PRAGMA table_info(mentors)`).all<{ name: string }>();
   if (!mentorInfo.results.some((column) => column.name === 'user_id')) await db.prepare(`ALTER TABLE mentors ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE SET NULL`).run();
+  for (const [name, definition] of mentorColumns) {
+    if (!mentorInfo.results.some((column) => column.name === name)) await db.prepare(`ALTER TABLE mentors ADD COLUMN ${name} ${definition}`).run();
+  }
   const requestInfo = await db.prepare(`PRAGMA table_info(help_requests)`).all<{ name: string }>();
   for (const [name, definition] of requestColumns) {
     if (!requestInfo.results.some((column) => column.name === name)) await db.prepare(`ALTER TABLE help_requests ADD COLUMN ${name} ${definition}`).run();
   }
   await db.batch(statements.slice(9).map((statement) => db.prepare(statement)));
-  await db.batch(seedMentors.map((mentor) => db.prepare(`INSERT OR IGNORE INTO mentors (id, name, initials, role, company, languages, helps_with) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(...mentor)));
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_mentors_discovery ON mentors(accepting_requests, verified, featured_rank)`).run();
+  await db.batch(seedMentors.map((mentor) => db.prepare(`INSERT INTO mentors (id, name, initials, role, company, languages, helps_with, bio, city, specialty, image_url, response_minutes, featured_rank)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Munich', ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET bio=excluded.bio, city=excluded.city, specialty=excluded.specialty, image_url=excluded.image_url, response_minutes=excluded.response_minutes, featured_rank=excluded.featured_rank`).bind(...mentor)));
   initialized = true;
 }
