@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vinext dev",
-    "build": "vinext build",
+    "build": "rm -rf node_modules/.vite && vinext build",
     "start": "vinext start",
     "start:railway": "node scripts/migrate-postgres.mjs && vinext start",
     "start:sites": "wrangler dev --config dist/server/wrangler.json",
