@@ -334,15 +334,15 @@ function Sidebar({
         </div>
         <nav className="flex-1 px-5 py-7 flex flex-col gap-0.5">
           {[
-            'Mentors',
-            'How It Works',
-            'Stories',
-            'Become a Mentor',
-            'Community',
-          ].map((l) => (
+            { label: 'Mentors', href: '#mentors' },
+            { label: 'How It Works', href: '#how-it-works' },
+            { label: 'Stories', href: '#stories' },
+            { label: 'Become a Mentor', href: '/app?tab=mentor' },
+            { label: 'Community workspace', href: '/app' },
+          ].map((item) => (
             <a
-              key={l}
-              href={`#${l.toLowerCase().replace(/\s+/g, '-')}`}
+              key={item.label}
+              href={item.href}
               onClick={close}
               style={{
                 fontFamily: SANS,
@@ -354,7 +354,7 @@ function Sidebar({
               }}
               className="hover:bg-[rgba(29,34,38,0.05)] transition-colors"
             >
-              {l}
+              {item.label}
             </a>
           ))}
         </nav>
@@ -1978,7 +1978,7 @@ function CTA() {
               letterSpacing: '1px',
             }}
           >
-            FREE · NO CREDENTIALS REQUIRED
+            FREE · VERIFIED PILOT ACCESS
           </span>
         </div>
       </div>
@@ -1991,11 +1991,38 @@ function Footer() {
   const cols = [
     {
       h: 'Platform',
-      links: ['Find a Mentor', 'Become a Mentor', 'How It Works', 'Match Desk'],
+      links: [
+        { label: 'Find a Mentor', href: '/#mentors' },
+        { label: 'Become a Mentor', href: '/app?tab=mentor' },
+        { label: 'How It Works', href: '/#how-it-works' },
+        { label: 'Match Desk', href: '/app?tab=discover' },
+      ],
     },
-    { h: 'Community', links: ['Field Notes', 'Stories', 'Events', 'Forum'] },
-    { h: 'Company', links: ['About', 'Blog', 'Careers', 'Press'] },
-    { h: 'Legal', links: ['Privacy', 'Terms', 'GDPR', 'Cookies'] },
+    {
+      h: 'Community',
+      links: [
+        { label: 'Stories', href: '/#stories' },
+        { label: 'Workspace', href: '/app' },
+        { label: 'Track record', href: '/app?tab=reputation' },
+      ],
+    },
+    {
+      h: 'Company',
+      links: [
+        { label: 'About Vitamin', href: '/about' },
+        { label: 'Munich pilot', href: '/about#pilot' },
+        { label: 'Safety', href: '/app?tab=safety' },
+      ],
+    },
+    {
+      h: 'Legal',
+      links: [
+        { label: 'Privacy', href: '/legal#privacy' },
+        { label: 'Terms', href: '/legal#terms' },
+        { label: 'Data rights', href: '/legal#gdpr' },
+        { label: 'Cookies', href: '/legal#cookies' },
+      ],
+    },
   ];
   return (
     <footer className="bg-[#1d2226]" data-dark>
@@ -2055,18 +2082,10 @@ function Footer() {
               >
                 {c.h}
               </p>
-              {c.links.map((l) => (
-                <a
-                  key={l}
-                  href={
-                    l === 'Find a Mentor'
-                      ? '#mentors'
-                      : l === 'How It Works'
-                        ? '#how-it-works'
-                        : l === 'Field Notes' || l === 'Stories'
-                          ? '#stories'
-                          : '/'
-                  }
+              {c.links.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
                   style={{
                     display: 'block',
                     fontFamily: SANS,
@@ -2077,8 +2096,8 @@ function Footer() {
                   }}
                   className="hover:text-white transition-colors"
                 >
-                  {l}
-                </a>
+                  {link.label}
+                </Link>
               ))}
             </div>
           ))}

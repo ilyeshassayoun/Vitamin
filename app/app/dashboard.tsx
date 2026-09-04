@@ -148,7 +148,13 @@ export function Dashboard({ displayName }: { displayName: string }) {
     if (m.ok) setMentors(m.data.mentors);
   }
   useEffect(() => {
-    const task = setTimeout(() => void refresh(), 0);
+    const requestedTab = new URLSearchParams(window.location.search).get('tab');
+    const task = setTimeout(() => {
+      if (requestedTab && tabs.some(([key]) => key === requestedTab)) {
+        setTab(requestedTab);
+      }
+      void refresh();
+    }, 0);
     return () => clearTimeout(task);
   }, []);
   async function submit(
