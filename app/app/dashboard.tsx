@@ -244,9 +244,9 @@ export function Dashboard({ displayName }: { displayName: string }) {
         </div>
       </header>
       <div className="mx-auto grid max-w-[1600px] gap-5 px-3 py-3 sm:px-5 sm:py-5 lg:min-h-screen lg:grid-cols-[260px_minmax(0,1fr)_320px] lg:gap-6 lg:p-6">
-        <aside className="sticky top-6 hidden h-[calc(100vh-3rem)] overflow-hidden rounded-[30px] bg-[#173f30] p-5 text-white shadow-[0_28px_70px_rgba(23,63,48,.18)] lg:flex lg:flex-col">
+        <aside className="sticky top-6 hidden h-[calc(100vh-3rem)] overflow-hidden rounded-[12px] bg-[#1d2226] p-5 text-white shadow-[0_28px_70px_rgba(29,34,38,.18)] lg:flex lg:flex-col">
           <Link href="/" className="flex items-center gap-3 px-2">
-            <span className="grid size-10 place-items-center rounded-[14px] bg-[#f3b36c] text-[#173f30]">
+            <span className="grid size-10 place-items-center rounded-[6px] bg-[#2e4fff] text-white">
               <Sparkles className="size-4" />
             </span>
             <strong className="font-heading text-xl tracking-[-.06em]">
@@ -261,7 +261,7 @@ export function Dashboard({ displayName }: { displayName: string }) {
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className={`flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-left text-sm font-semibold transition-all ${tab === key ? 'bg-white text-[#173f30] shadow-sm' : 'text-white/65 hover:bg-white/8 hover:text-white'}`}
+                className={`flex w-full items-center gap-3 rounded-md px-3.5 py-3 text-left text-sm font-semibold transition-all ${tab === key ? 'bg-white text-[#1d2226] shadow-sm' : 'text-white/65 hover:bg-white/8 hover:text-white'}`}
               >
                 <Icon className="size-4" />
                 {label}
@@ -292,7 +292,7 @@ export function Dashboard({ displayName }: { displayName: string }) {
             Public site
           </Link>
         </aside>
-        <section className="min-w-0 rounded-[30px] border border-white/70 bg-[#fbfaf5]/90 p-5 shadow-[0_24px_70px_rgba(27,57,43,.07)] backdrop-blur-sm sm:p-7 lg:p-9">
+        <section className="min-w-0 rounded-[12px] border border-white/70 bg-[#f9f9f8]/94 p-5 shadow-[0_24px_70px_rgba(29,34,38,.07)] backdrop-blur-sm sm:p-7 lg:p-9">
           <div className="mb-6 flex gap-2 overflow-x-auto pb-1 lg:hidden">
             {tabs.map(([key, label, Icon]) => (
               <Button
@@ -308,7 +308,7 @@ export function Dashboard({ displayName }: { displayName: string }) {
             ))}
           </div>
           {message && (
-            <div className="mb-5 rounded-2xl border border-primary/20 bg-[#edf7f0] p-4 text-sm text-primary">
+            <div className="mb-5 rounded-md border border-primary/20 bg-[#eef5ff] p-4 text-sm text-primary">
               {message}
             </div>
           )}
@@ -451,7 +451,7 @@ export function Dashboard({ displayName }: { displayName: string }) {
             </form>
           </div>
           <ProfileCard profile={profile} mentor={mentor} active={active} />
-          <div className="rounded-[26px] border bg-card/90 p-5 shadow-[0_14px_40px_rgba(27,57,43,.05)]">
+          <div className="rounded-[12px] border bg-card/90 p-5 shadow-[0_14px_40px_rgba(29,34,38,.05)]">
             <div className="flex items-center justify-between">
               <h2 className="font-heading font-semibold">Notifications</h2>
               {unread > 0 && (
@@ -557,7 +557,7 @@ function Overview({
       {!profile.onboardingComplete ? (
         <Contribution onSubmit={(data) => fetchForm(data)} />
       ) : (
-        <div className="relative mt-7 overflow-hidden rounded-[30px] bg-[#173f30] p-7 text-white shadow-[0_24px_60px_rgba(23,63,48,.2)] sm:p-9">
+        <div className="relative mt-7 overflow-hidden rounded-[12px] bg-[#1d2226] p-7 text-white shadow-[0_24px_60px_rgba(29,34,38,.2)] sm:p-9">
           <div className="absolute -right-16 -top-20 size-64 rounded-full border-[44px] border-[#f3b36c]/12" />
           <div className="relative">
             <p className="text-xs font-bold uppercase tracking-[.17em] text-[#f3b36c]">
@@ -606,9 +606,9 @@ function Metric({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[24px] border bg-white/85 p-5 shadow-[0_10px_30px_rgba(27,57,43,.045)]">
+    <div className="rounded-[10px] border bg-white/85 p-5 shadow-[0_10px_30px_rgba(29,34,38,.045)]">
       <div className="flex items-center justify-between">
-        <span className="grid size-10 place-items-center rounded-2xl bg-[#edf1e8] text-primary">
+        <span className="grid size-10 place-items-center rounded-md bg-[#eef3fb] text-primary">
           {icon}
         </span>
         <strong className="font-heading text-3xl tracking-[-.05em] text-primary">
@@ -684,7 +684,7 @@ function Discover({
           {mentors.map((m) => (
             <article className="mentor-card" key={m.id}>
               <div className="flex items-start justify-between">
-                <span className="grid size-12 place-items-center rounded-2xl bg-[#e8eee8] font-bold text-primary">
+                <span className="grid size-12 place-items-center rounded-md bg-[#eef3fb] font-bold text-primary">
                   {m.initials}
                 </span>
                 <Badge variant="outline">
@@ -939,7 +939,7 @@ function MentorSpace({
     <>
       <p className="section-kicker">Mentor workspace</p>
       <h1 className="section-title">Your contribution has a home.</h1>
-      <div className="mt-7 rounded-[28px] bg-[#173f30] p-7 text-white">
+      <div className="mt-7 rounded-[10px] bg-[#1d2226] p-7 text-white">
         <Badge className="bg-white/10 text-white">
           {isLive ? 'Accepting requests' : 'Verification pending'}
         </Badge>
@@ -1098,9 +1098,9 @@ function ProfileCard({
   active: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-[28px] bg-[#173f30] text-white shadow-[0_20px_55px_rgba(23,63,48,.18)]">
-      <div className="relative h-24 bg-[radial-gradient(circle_at_20%_20%,rgba(243,179,108,.5),transparent_45%),linear-gradient(125deg,#285b46,#173f30)]">
-        <span className="absolute -bottom-7 left-5 grid size-14 place-items-center rounded-2xl border-4 border-[#173f30] bg-[#f3b36c] text-[#173f30]">
+    <div className="overflow-hidden rounded-[12px] bg-[#1d2226] text-white shadow-[0_20px_55px_rgba(29,34,38,.18)]">
+      <div className="relative h-24 bg-[radial-gradient(circle_at_20%_20%,rgba(46,79,255,.65),transparent_45%),linear-gradient(125deg,#0a66c2,#1d2226)]">
+        <span className="absolute -bottom-7 left-5 grid size-14 place-items-center rounded-md border-4 border-[#1d2226] bg-[#2e4fff] text-white">
           <CircleUserRound className="size-7" />
         </span>
       </div>
