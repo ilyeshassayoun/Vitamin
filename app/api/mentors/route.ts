@@ -1,6 +1,7 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 
 export async function GET(request: Request) {
+  const db = await getDatabase();
   const url = new URL(request.url);
   const query = (url.searchParams.get('q') ?? '').trim().slice(0, 80);
   const specialty = (url.searchParams.get('specialty') ?? '')
@@ -24,8 +25,8 @@ export async function GET(request: Request) {
     conditions.push('specialty = ?');
     bindings.push(specialty);
   }
-  const statement = env.DB
-    .prepare(`SELECT id, name, initials, role, company, languages, helps_with AS helpsWith,
+  const statement =
+    db.prepare(`SELECT id, name, initials, role, company, languages, helps_with AS helpsWith,
     COALESCE(bio, helps_with) AS bio, COALESCE(city, 'Munich') AS city, COALESCE(specialty, 'AFT') AS specialty,
     image_url AS imageUrl, COALESCE(response_minutes, 15) AS responseMinutes, verified,
     access_tier AS accessTier FROM mentors WHERE ${conditions.join(' AND ')}
@@ -34,15 +35,21 @@ export async function GET(request: Request) {
   if (url.searchParams.get('includeMeta') !== '1')
     return Response.json({ mentors: result.results });
   const [completed, activeMentors, effort] = await Promise.all([
-    env.DB.prepare(
-      `SELECT COUNT(*) AS count FROM help_requests WHERE status = 'completed'`,
-    ).first<{ count: number }>(),
-    env.DB.prepare(
-      `SELECT COUNT(*) AS count FROM mentors WHERE accepting_requests = 1 AND verified = 1 AND user_id IS NOT NULL`,
-    ).first<{ count: number }>(),
-    env.DB.prepare(
-      `SELECT COUNT(*) AS total, SUM(CASE WHEN effort_rating >= 4 THEN 1 ELSE 0 END) AS positive FROM reviews WHERE released = 1`,
-    ).first<{ total: number; positive: number | null }>(),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM help_requests WHERE status = 'completed'`,
+      )
+      .first<{ count: number }>(),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS count FROM mentors WHERE accepting_requests = 1 AND verified = 1 AND user_id IS NOT NULL`,
+      )
+      .first<{ count: number }>(),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS total, SUM(CASE WHEN effort_rating >= 4 THEN 1 ELSE 0 END) AS positive FROM reviews WHERE released = 1`,
+      )
+      .first<{ total: number; positive: number | null }>(),
   ]);
   const positiveEffortRate = effort?.total
     ? Math.round(((effort.positive ?? 0) / effort.total) * 100)

@@ -1,8 +1,9 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 import { requireApiUser } from '@/lib/current-user';
 import { invalidJsonResponse, readJsonObject } from '@/lib/http';
 
 export async function POST(request: Request) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -27,15 +28,15 @@ export async function POST(request: Request) {
     .join('')
     .slice(0, 2)
     .toUpperCase();
-  const existing = await env.DB.prepare(
-    `SELECT id, verified FROM mentors WHERE user_id=?`,
-  )
+  const existing = await db
+    .prepare(`SELECT id, verified FROM mentors WHERE user_id=?`)
     .bind(user.userId)
     .first<{ id: string; verified: number }>();
   if (existing) {
-    await env.DB.prepare(
-      `UPDATE mentors SET role=?, company=?, helps_with=?, bio=?, accepting_requests=? WHERE id=?`,
-    )
+    await db
+      .prepare(
+        `UPDATE mentors SET role=?, company=?, helps_with=?, bio=?, accepting_requests=? WHERE id=?`,
+      )
       .bind(
         role,
         company,
@@ -46,7 +47,8 @@ export async function POST(request: Request) {
       )
       .run();
   } else {
-    await env.DB.prepare(`INSERT INTO mentors
+    await db
+      .prepare(`INSERT INTO mentors
       (id, user_id, name, initials, role, company, languages, helps_with, bio, city, specialty, verified, accepting_requests)
       VALUES (?, ?, ?, ?, ?, ?, 'ES · DE · EN', ?, ?, 'Munich', 'AFT', 0, 0)`)
       .bind(
@@ -61,7 +63,8 @@ export async function POST(request: Request) {
       )
       .run();
   }
-  await env.DB.prepare(`UPDATE profiles SET role='mentor' WHERE user_id=?`)
+  await db
+    .prepare(`UPDATE profiles SET role='mentor' WHERE user_id=?`)
     .bind(user.userId)
     .run();
   return Response.json(

@@ -1,9 +1,10 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 import { requireApiUser } from '@/lib/current-user';
 import { getRequestForParticipant, notify } from '@/lib/domain';
 import { invalidJsonResponse, readJsonObject } from '@/lib/http';
 
 export async function POST(request: Request) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -43,9 +44,10 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   try {
-    await env.DB.prepare(
-      `INSERT INTO reviews (id, request_id, reviewer_id, reviewee_id, effort_rating, outcome, potential_direction, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
+    await db
+      .prepare(
+        `INSERT INTO reviews (id, request_id, reviewer_id, reviewee_id, effort_rating, outcome, potential_direction, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
       .bind(
         crypto.randomUUID(),
         requestId,
@@ -65,30 +67,33 @@ export async function POST(request: Request) {
       );
     throw error;
   }
-  const count = await env.DB.prepare(
-    `SELECT COUNT(*) AS count FROM reviews WHERE request_id=?`,
-  )
+  const count = await db
+    .prepare(`SELECT COUNT(*) AS count FROM reviews WHERE request_id=?`)
     .bind(requestId)
     .first<{ count: number }>();
   if ((count?.count ?? 0) >= 2) {
-    await env.DB.prepare(`UPDATE reviews SET released=1 WHERE request_id=?`)
+    await db
+      .prepare(`UPDATE reviews SET released=1 WHERE request_id=?`)
       .bind(requestId)
       .run();
-    const positive = await env.DB.prepare(
-      `SELECT reviewee_id AS revieweeId FROM reviews WHERE request_id=? AND effort_rating>=4`,
-    )
+    const positive = await db
+      .prepare(
+        `SELECT reviewee_id AS revieweeId FROM reviews WHERE request_id=? AND effort_rating>=4`,
+      )
       .bind(requestId)
       .all<{ revieweeId: string }>();
-    await env.DB.batch(
+    await db.batch(
       positive.results.map((row) =>
-        env.DB.prepare(
-          `INSERT OR IGNORE INTO reputation_events (id, user_id, request_id, kind, created_at) VALUES (?, ?, ?, 'positive_effort', ?)`,
-        ).bind(
-          crypto.randomUUID(),
-          row.revieweeId,
-          requestId,
-          new Date().toISOString(),
-        ),
+        db
+          .prepare(
+            `INSERT OR IGNORE INTO reputation_events (id, user_id, request_id, kind, created_at) VALUES (?, ?, ?, 'positive_effort', ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            row.revieweeId,
+            requestId,
+            new Date().toISOString(),
+          ),
       ),
     );
     await Promise.all([

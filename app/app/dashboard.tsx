@@ -235,8 +235,7 @@ export function Dashboard({ displayName }: { displayName: string }) {
                 <span className="absolute right-1 top-1 size-2 rounded-full bg-[#e87943]" />
               )}
             </Button>
-            <form action="/signout-with-chatgpt" method="get">
-              <input type="hidden" name="return_to" value="/" />
+            <form action="/api/auth/sign-out" method="post">
               <Button
                 type="submit"
                 variant="ghost"
@@ -443,8 +442,7 @@ export function Dashboard({ displayName }: { displayName: string }) {
                 <span className="absolute right-1 top-1 size-2 rounded-full bg-[#e87943]" />
               )}
             </Button>
-            <form action="/signout-with-chatgpt" method="get">
-              <input type="hidden" name="return_to" value="/" />
+            <form action="/api/auth/sign-out" method="post">
               <Button
                 type="submit"
                 variant="ghost"

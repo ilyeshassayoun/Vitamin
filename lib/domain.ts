@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 
 export async function notify(
   userId: string | null,
@@ -6,10 +6,12 @@ export async function notify(
   title: string,
   body: string,
 ) {
+  const db = await getDatabase();
   if (!userId) return;
-  await env.DB.prepare(
-    `INSERT INTO notifications (id, user_id, type, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-  )
+  await db
+    .prepare(
+      `INSERT INTO notifications (id, user_id, type, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+    )
     .bind(
       crypto.randomUUID(),
       userId,
@@ -25,9 +27,11 @@ export async function getRequestForParticipant(
   requestId: string,
   userId: string,
 ) {
-  return env.DB.prepare(
-    `SELECT r.*, m.user_id AS mentorUserId, m.name AS mentorName, u.display_name AS menteeName FROM help_requests r JOIN mentors m ON m.id = r.mentor_id JOIN users u ON u.id = r.mentee_id WHERE r.id = ? AND (r.mentee_id = ? OR m.user_id = ?)`,
-  )
+  const db = await getDatabase();
+  return db
+    .prepare(
+      `SELECT r.*, m.user_id AS mentorUserId, m.name AS mentorName, u.display_name AS menteeName FROM help_requests r JOIN mentors m ON m.id = r.mentor_id JOIN users u ON u.id = r.mentee_id WHERE r.id = ? AND (r.mentee_id = ? OR m.user_id = ?)`,
+    )
     .bind(requestId, userId, userId)
     .first<{
       id: string;

@@ -211,7 +211,7 @@ function Nav({
             </Link>
           ) : (
             <a
-              href="/signin-with-chatgpt?return_to=%2Fapp"
+              href="/signin?next=%2Fapp"
               target="_top"
               style={{
                 fontFamily: SANS,
@@ -378,7 +378,7 @@ function Sidebar({
             </Link>
           ) : (
             <a
-              href="/signin-with-chatgpt?return_to=%2Fapp"
+              href="/signin?next=%2Fapp"
               target="_top"
               style={{
                 fontFamily: SANS,
@@ -473,7 +473,7 @@ function Modal({
   async function sendRequest() {
     if (msg.trim().length < 20 || busy) return;
     if (!signedInName) {
-      window.location.assign('/signin-with-chatgpt?return_to=%2Fapp');
+      window.location.assign('/signin?next=%2Fapp');
       return;
     }
     setBusy(true);
@@ -1383,7 +1383,7 @@ function MentorList({
                   'No verified mentors are accepting requests right now.'}
               </p>
               <a
-                href="/signin-with-chatgpt?return_to=%2Fapp"
+                href="/signin?next=%2Fapp"
                 target="_top"
                 style={{
                   fontFamily: MONO,

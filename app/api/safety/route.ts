@@ -1,9 +1,10 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 import { requireApiUser } from '@/lib/current-user';
 import { getRequestForParticipant, notify } from '@/lib/domain';
 import { invalidJsonResponse, readJsonObject } from '@/lib/http';
 
 export async function POST(request: Request) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -44,9 +45,10 @@ export async function POST(request: Request) {
       ? String(body.kind)
       : 'conduct';
     const id = crypto.randomUUID();
-    await env.DB.prepare(
-      `INSERT INTO internal_flags (id, request_id, reporter_id, reported_user_id, kind, details, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    )
+    await db
+      .prepare(
+        `INSERT INTO internal_flags (id, request_id, reporter_id, reported_user_id, kind, details, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
       .bind(
         id,
         requestId,
@@ -74,14 +76,16 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     const disputed = reviewId
-      ? await env.DB.prepare(
-          `SELECT id FROM reviews WHERE id=? AND request_id=? AND reviewee_id=?`,
-        )
+      ? await db
+          .prepare(
+            `SELECT id FROM reviews WHERE id=? AND request_id=? AND reviewee_id=?`,
+          )
           .bind(reviewId, requestId, user.userId)
           .first()
-      : await env.DB.prepare(
-          `SELECT id FROM internal_flags WHERE id=? AND request_id=? AND reported_user_id=?`,
-        )
+      : await db
+          .prepare(
+            `SELECT id FROM internal_flags WHERE id=? AND request_id=? AND reported_user_id=?`,
+          )
           .bind(flagId, requestId, user.userId)
           .first();
     if (!disputed)
@@ -90,9 +94,10 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     const id = crypto.randomUUID();
-    await env.DB.prepare(
-      `INSERT INTO disputes (id, review_id, flag_id, opened_by, reason, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-    )
+    await db
+      .prepare(
+        `INSERT INTO disputes (id, review_id, flag_id, opened_by, reason, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
       .bind(
         id,
         reviewId,
@@ -108,6 +113,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -123,16 +129,16 @@ export async function PATCH(request: Request) {
       { error: 'Please provide a complete response.' },
       { status: 400 },
     );
-  const flag = await env.DB.prepare(
-    `SELECT id FROM internal_flags WHERE id=? AND reported_user_id=?`,
-  )
+  const flag = await db
+    .prepare(`SELECT id FROM internal_flags WHERE id=? AND reported_user_id=?`)
     .bind(flagId, user.userId)
     .first();
   if (!flag)
     return Response.json({ error: 'Concern not found' }, { status: 404 });
-  await env.DB.prepare(
-    `UPDATE internal_flags SET response=?, status='responded' WHERE id=?`,
-  )
+  await db
+    .prepare(
+      `UPDATE internal_flags SET response=?, status='responded' WHERE id=?`,
+    )
     .bind(response, flagId)
     .run();
   return Response.json({ ok: true });

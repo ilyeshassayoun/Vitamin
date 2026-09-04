@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 import { requireApiUser } from '@/lib/current-user';
 import { getRequestForParticipant, notify } from '@/lib/domain';
 import { invalidJsonResponse, readJsonObject } from '@/lib/http';
@@ -13,6 +13,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -59,9 +60,10 @@ export async function PATCH(
         );
       }
     }
-    await env.DB.prepare(
-      `UPDATE help_requests SET scheduled_for=?, scheduling_url=?, status='active', updated_at=? WHERE id=?`,
-    )
+    await db
+      .prepare(
+        `UPDATE help_requests SET scheduled_for=?, scheduling_url=?, status='active', updated_at=? WHERE id=?`,
+      )
       .bind(scheduledFor, url, now, id)
       .run();
     await notify(
@@ -85,20 +87,21 @@ export async function PATCH(
         : null;
     if (!column)
       return Response.json({ error: 'Not allowed' }, { status: 403 });
-    await env.DB.prepare(
-      `UPDATE help_requests SET ${column}=1, updated_at=? WHERE id=?`,
-    )
+    await db
+      .prepare(`UPDATE help_requests SET ${column}=1, updated_at=? WHERE id=?`)
       .bind(now, id)
       .run();
-    const updated = await env.DB.prepare(
-      `SELECT mentee_completed, mentor_completed FROM help_requests WHERE id=?`,
-    )
+    const updated = await db
+      .prepare(
+        `SELECT mentee_completed, mentor_completed FROM help_requests WHERE id=?`,
+      )
       .bind(id)
       .first<{ mentee_completed: number; mentor_completed: number }>();
     if (updated?.mentee_completed && updated.mentor_completed) {
-      await env.DB.prepare(
-        `UPDATE help_requests SET status='completed', updated_at=? WHERE id=?`,
-      )
+      await db
+        .prepare(
+          `UPDATE help_requests SET status='completed', updated_at=? WHERE id=?`,
+        )
         .bind(now, id)
         .run();
       await Promise.all([
@@ -140,9 +143,10 @@ export async function PATCH(
     );
   const note =
     typeof body.note === 'string' ? body.note.trim().slice(0, 500) : null;
-  await env.DB.prepare(
-    `UPDATE help_requests SET status=?, decision_note=?, updated_at=? WHERE id=?`,
-  )
+  await db
+    .prepare(
+      `UPDATE help_requests SET status=?, decision_note=?, updated_at=? WHERE id=?`,
+    )
     .bind(target, note, now, id)
     .run();
   const recipient = isMentor

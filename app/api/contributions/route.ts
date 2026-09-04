@@ -1,8 +1,9 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 import { requireApiUser } from '@/lib/current-user';
 import { invalidJsonResponse, readJsonObject } from '@/lib/http';
 
 export async function POST(request: Request) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -22,13 +23,15 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   const id = crypto.randomUUID();
-  await env.DB.batch([
-    env.DB.prepare(
-      `INSERT INTO contributions (id, author_id, title, body, category, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-    ).bind(id, user.userId, title, text, category, new Date().toISOString()),
-    env.DB.prepare(
-      `UPDATE profiles SET onboarding_complete = 1 WHERE user_id = ?`,
-    ).bind(user.userId),
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO contributions (id, author_id, title, body, category, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(id, user.userId, title, text, category, new Date().toISOString()),
+    db
+      .prepare(`UPDATE profiles SET onboarding_complete = 1 WHERE user_id = ?`)
+      .bind(user.userId),
   ]);
   return Response.json({ id, ok: true }, { status: 201 });
 }

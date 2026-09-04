@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { getDatabase } from '@/lib/database';
 import { requireApiUser } from '@/lib/current-user';
 import { getRequestForParticipant, notify } from '@/lib/domain';
 import { invalidJsonResponse, readJsonObject } from '@/lib/http';
@@ -7,15 +7,17 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
   const { id } = await context.params;
   if (!(await getRequestForParticipant(id, user.userId)))
     return Response.json({ error: 'Not found' }, { status: 404 });
-  const rows = await env.DB.prepare(
-    `SELECT n.id, n.body, n.created_at AS createdAt, u.display_name AS authorName FROM interaction_notes n JOIN users u ON u.id=n.author_id WHERE n.request_id=? ORDER BY n.created_at`,
-  )
+  const rows = await db
+    .prepare(
+      `SELECT n.id, n.body, n.created_at AS createdAt, u.display_name AS authorName FROM interaction_notes n JOIN users u ON u.id=n.author_id WHERE n.request_id=? ORDER BY n.created_at`,
+    )
     .bind(id)
     .all();
   return Response.json({ notes: rows.results });
@@ -24,6 +26,7 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  const db = await getDatabase();
   const user = await requireApiUser();
   if (!user)
     return Response.json({ error: 'Authentication required' }, { status: 401 });
@@ -40,9 +43,10 @@ export async function POST(
     typeof data.body === 'string' ? data.body.trim().slice(0, 1500) : '';
   if (body.length < 2)
     return Response.json({ error: 'Write a note first.' }, { status: 400 });
-  await env.DB.prepare(
-    `INSERT INTO interaction_notes (id, request_id, author_id, body, created_at) VALUES (?, ?, ?, ?, ?)`,
-  )
+  await db
+    .prepare(
+      `INSERT INTO interaction_notes (id, request_id, author_id, body, created_at) VALUES (?, ?, ?, ?, ?)`,
+    )
     .bind(crypto.randomUUID(), id, user.userId, body, new Date().toISOString())
     .run();
   const recipient =
