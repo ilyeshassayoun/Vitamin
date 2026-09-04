@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS interaction_notes (
   created_at text NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_interaction_notes_request ON interaction_notes (request_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_interaction_notes_author ON interaction_notes (author_id);
 
 CREATE TABLE IF NOT EXISTS reviews (
   id text PRIMARY KEY,
@@ -90,6 +91,7 @@ CREATE TABLE IF NOT EXISTS reviews (
   UNIQUE (request_id, reviewer_id)
 );
 CREATE INDEX IF NOT EXISTS idx_reviews_reviewee_released ON reviews (reviewee_id, released);
+CREATE INDEX IF NOT EXISTS idx_reviews_reviewer ON reviews (reviewer_id);
 
 CREATE TABLE IF NOT EXISTS reputation_events (
   id text PRIMARY KEY,
@@ -100,6 +102,7 @@ CREATE TABLE IF NOT EXISTS reputation_events (
   UNIQUE (user_id, request_id, kind)
 );
 CREATE INDEX IF NOT EXISTS idx_reputation_user ON reputation_events (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_reputation_request ON reputation_events (request_id);
 
 CREATE TABLE IF NOT EXISTS internal_flags (
   id text PRIMARY KEY,
@@ -113,6 +116,8 @@ CREATE TABLE IF NOT EXISTS internal_flags (
   created_at text NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_flags_reported_status ON internal_flags (reported_user_id, status);
+CREATE INDEX IF NOT EXISTS idx_flags_reporter ON internal_flags (reporter_id);
+CREATE INDEX IF NOT EXISTS idx_flags_request ON internal_flags (request_id);
 
 CREATE TABLE IF NOT EXISTS disputes (
   id text PRIMARY KEY,
@@ -124,6 +129,9 @@ CREATE TABLE IF NOT EXISTS disputes (
   created_at text NOT NULL,
   CHECK ((review_id IS NOT NULL)::integer + (flag_id IS NOT NULL)::integer = 1)
 );
+CREATE INDEX IF NOT EXISTS idx_disputes_review ON disputes (review_id);
+CREATE INDEX IF NOT EXISTS idx_disputes_flag ON disputes (flag_id);
+CREATE INDEX IF NOT EXISTS idx_disputes_opened_by ON disputes (opened_by);
 
 CREATE TABLE IF NOT EXISTS notifications (
   id text PRIMARY KEY,
@@ -149,3 +157,29 @@ ALTER TABLE disputes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+
+DO $$
+DECLARE
+  protected_table text;
+BEGIN
+  FOREACH protected_table IN ARRAY ARRAY[
+    'users', 'profiles', 'contributions', 'mentors', 'help_requests',
+    'interaction_notes', 'reviews', 'reputation_events', 'internal_flags',
+    'disputes', 'notifications'
+  ]
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_policies
+      WHERE schemaname = 'public'
+        AND tablename = protected_table
+        AND policyname = 'server_only'
+    ) THEN
+      EXECUTE format(
+        'CREATE POLICY server_only ON public.%I FOR ALL TO anon, authenticated USING (false) WITH CHECK (false)',
+        protected_table
+      );
+    END IF;
+  END LOOP;
+END
+$$;

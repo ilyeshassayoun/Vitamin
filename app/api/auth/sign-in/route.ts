@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { getRuntimeEnv } from '@/lib/runtime-env';
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -18,7 +19,14 @@ export async function POST(request: Request) {
     return Response.redirect(signIn, 303);
   }
 
-  const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL;
+  const railwayDomain = getRuntimeEnv('RAILWAY_PUBLIC_DOMAIN');
+  const railwayOrigin = railwayDomain
+    ? `https://${railwayDomain}`
+    : undefined;
+  const configuredOrigin =
+    getRuntimeEnv('SITE_URL') ??
+    getRuntimeEnv('NEXT_PUBLIC_SITE_URL') ??
+    railwayOrigin;
   const origin = configuredOrigin
     ? configuredOrigin.replace(/\/$/, '')
     : new URL(request.url).origin;

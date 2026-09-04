@@ -16,23 +16,22 @@ try {
     name text PRIMARY KEY,
     applied_at timestamptz NOT NULL DEFAULT now()
   )`;
-  await sql`SELECT pg_advisory_lock(726498163)`;
   const directory = join(process.cwd(), 'postgres', 'migrations');
   const files = (await readdir(directory))
     .filter((name) => name.endsWith('.sql'))
     .sort();
   for (const name of files) {
-    const existing =
-      await sql`SELECT 1 FROM vitamin_migrations WHERE name = ${name}`;
-    if (existing.length) continue;
     const migration = await readFile(join(directory, name), 'utf8');
     await sql.begin(async (transaction) => {
+      await transaction`SELECT pg_advisory_xact_lock(726498163)`;
+      const existing =
+        await transaction`SELECT 1 FROM vitamin_migrations WHERE name = ${name}`;
+      if (existing.length) return;
       await transaction.unsafe(migration);
       await transaction`INSERT INTO vitamin_migrations (name) VALUES (${name})`;
+      console.log(`Applied ${name}`);
     });
-    console.log(`Applied ${name}`);
   }
 } finally {
-  await sql`SELECT pg_advisory_unlock(726498163)`.catch(() => undefined);
   await sql.end();
 }

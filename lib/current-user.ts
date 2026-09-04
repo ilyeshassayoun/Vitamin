@@ -2,9 +2,9 @@ import { getDatabase } from '@/lib/database';
 import { getChatGPTUser } from '@/app/chatgpt-auth';
 
 export async function requireApiUser() {
-  const db = await getDatabase();
   const identity = await getChatGPTUser();
   if (!identity) return null;
+  const db = await getDatabase();
   const now = new Date().toISOString();
   await db
     .prepare(

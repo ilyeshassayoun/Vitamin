@@ -1,0 +1,10 @@
+.git
+.github
+.vinext
+dist
+node_modules
+outputs
+work
+.env*
+*.tar.gz
+npm-debug.log*

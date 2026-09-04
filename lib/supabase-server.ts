@@ -1,15 +1,16 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { getRuntimeEnv } from '@/lib/runtime-env';
 
 export function isSupabaseConfigured() {
   return Boolean(
-    process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY,
+    getRuntimeEnv('SUPABASE_URL') && getRuntimeEnv('SUPABASE_PUBLISHABLE_KEY'),
   );
 }
 
 export async function createSupabaseServerClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const url = getRuntimeEnv('SUPABASE_URL');
+  const key = getRuntimeEnv('SUPABASE_PUBLISHABLE_KEY');
   if (!url || !key) {
     throw new Error('SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are required.');
   }

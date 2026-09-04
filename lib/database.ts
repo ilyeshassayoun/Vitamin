@@ -1,4 +1,5 @@
 import postgres from 'postgres';
+import { getRuntimeEnv } from '@/lib/runtime-env';
 
 type Row = Record<string, unknown>;
 type PostgresClient = ReturnType<typeof postgres>;
@@ -30,24 +31,26 @@ class PostgresStatement implements DatabaseStatement {
     private readonly values: unknown[] = [],
   ) {}
 
-  bind(...values: unknown[]) {
+  bind(...values: unknown[]): DatabaseStatement {
     return new PostgresStatement(this.client, this.query, values);
   }
 
-  async all<T extends Row = Row>() {
+  async all<T extends Row = Row>(): Promise<DatabaseResult<T>> {
     return this.execute<T>(this.client);
   }
 
-  async first<T extends Row = Row>() {
+  async first<T extends Row = Row>(): Promise<T | null> {
     const result = await this.execute<T>(this.client);
     return result.results[0] ?? null;
   }
 
-  async run<T extends Row = Row>() {
+  async run<T extends Row = Row>(): Promise<DatabaseResult<T>> {
     return this.execute<T>(this.client);
   }
 
-  async execute<T extends Row = Row>(client: PostgresClient) {
+  async execute<T extends Row = Row>(
+    client: PostgresClient,
+  ): Promise<DatabaseResult<T>> {
     const query = normalizePostgresQuery(this.query);
     const rows = await client.unsafe<T[]>(query, this.values as never[]);
     return {
@@ -61,7 +64,7 @@ class PostgresStatement implements DatabaseStatement {
 class PostgresDatabase implements Database {
   constructor(private readonly client: PostgresClient) {}
 
-  prepare(query: string) {
+  prepare(query: string): DatabaseStatement {
     return new PostgresStatement(this.client, query);
   }
 
@@ -83,17 +86,26 @@ class PostgresDatabase implements Database {
 let railwayDatabase: Database | null = null;
 
 export async function getDatabase(): Promise<Database> {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = getRuntimeEnv('DATABASE_URL');
   if (databaseUrl) {
     if (!railwayDatabase) {
+      const requestedPoolSize = Number(getRuntimeEnv('DATABASE_POOL_SIZE') ?? 10);
+      const poolSize =
+        Number.isInteger(requestedPoolSize) &&
+        requestedPoolSize >= 1 &&
+        requestedPoolSize <= 20
+          ? requestedPoolSize
+          : 10;
       const client = postgres(databaseUrl, {
-        max: Number(process.env.DATABASE_POOL_SIZE ?? 10),
+        max: poolSize,
         idle_timeout: 20,
         connect_timeout: 15,
         prepare: false,
-        ssl: process.env.DATABASE_SSL === 'disable' ? false : 'require',
+        ssl: getRuntimeEnv('DATABASE_SSL') === 'disable' ? false : 'require',
       });
-      railwayDatabase = new PostgresDatabase(client);
+      const database = new PostgresDatabase(client);
+      railwayDatabase = database;
+      return database;
     }
     return railwayDatabase;
   }
@@ -107,6 +119,10 @@ function normalizePostgresQuery(query: string) {
   let index = 0;
   let normalized = query
     .replace(/INSERT\s+OR\s+IGNORE/i, 'INSERT')
+    .replace(
+      /\bAS\s+([a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*)\b/g,
+      (_match, alias: string) => `AS "${alias}"`,
+    )
     .replace(/\?/g, () => `$${++index}`)
     .trim()
     .replace(/;$/, '');
